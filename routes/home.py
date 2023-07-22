@@ -4,9 +4,9 @@ app_home = APIRouter()
 
 @app_home.get('/', tags=["Intro"])
 async def hello():
-    return {"message": "Hello!"}
+    return {"message": "Hola!"}
 
 
 @app_home.get('/bye', tags=["Intro"])
 async def bye():
-    return {"message": "Bye!"}
+    return {"message": "Adiós!"}

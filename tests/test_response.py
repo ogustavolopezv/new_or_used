@@ -3,8 +3,8 @@ from app import app
 
 
 def test_success_prediction():
-    endpoint = '/v1/iris/predict'
-    body = {"data": [[4.8, 3, 1.4, 0.3], [2, 1, 3.2, 1.1]]}
+    endpoint = '/v1/new_or_used/predict'
+    body = {"data": [[0, 0, 0, 0], [1000, 3, 2, 1]]}
 
     with TestClient(app) as client:
         response = client.post(endpoint, json=body)
@@ -14,7 +14,7 @@ def test_success_prediction():
 
 
 def test_bad_request():
-    endpoint = '/v1/iris/predict'
+    endpoint = '/v1/new_or_used/predict'
     body = {"data": [[4.8, 3, 1.4], [2, 1, 3.2, 1.1]]}
 
     with TestClient(app) as client:
