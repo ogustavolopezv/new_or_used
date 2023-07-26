@@ -1,6 +1,9 @@
 # new-or-used-ml-deploy
 Code repository for Take-Home exercise of Machine Learning classification model deployment with FastAPI and Docker to provide availability of predictions on new or used products for MercadoLibre.
 
+Requerimientos en DS_MLF
+EDA y DEscripción de la solución implementada  eda/EDA & Mo
+
 # Demo instructions
 
 
@@ -27,8 +30,18 @@ http://127.0.0.1:84/docs
 
 ### 5. Try out the POST /predict method
 ```
-curl -X POST "http://127.0.0.1/v1/new_or_used/predict" -H\
- "accept: application/json"\
- -H "Content-Type: application/json"\
- -d "{\"data\":[[4.8,3,1.4,0.3],[2,1,3.2,1.1]]}"
+curl -X 'POST' \
+  'http://localhost:84/v9/new_or_used/predict' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "data": {
+    "listing_type_id": "free",
+    "base_price": 60.0,
+    "price": 60.0,
+    "initial_quantity": 1,
+    "sold_quantity": 0,
+    "available_quantity": 1
+  }
+}'
 ```

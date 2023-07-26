@@ -5,13 +5,16 @@ Run locus with:
 locust -f ./tests/load_test.py
 """
 
+data_example_0 = [3000.00, 3000.00, 1.0, 0.0, 1.0,
+                  "free", "buy_it_now", "active", "", "ARS",
+                  True, False, False, False, False, False, True]
 
 class NewOrUsedPredict(TaskSet):
     @tag('Predictions')
     @task
     def predict(self):
-        request_body = {"data": [[4.8, 3, 1.4, 0.3]]}
-        self.client.post('/v1/new_or_used/predict', json=request_body)
+        request_body = {"data": [data_example_0]}
+        self.client.post('/v9/new_or_used/predict', json=request_body)
 
     @tag('Baseline')
     @task
