@@ -1,83 +1,67 @@
 from joblib import dump
 from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_validate
 from sklearn.metrics import classification_report, confusion_matrix
-from sklearn.compose import make_column_selector, make_column_transformer
-from loader import new_or_used_dataset, new_or_used_featured_dataset
+from sklearn.compose import ColumnTransformer
+from sklearn.compose import make_column_selector as selector
+from loader import new_or_used_dataset
 
-# new_or_used_v9, Vanilla GradientBoostingClassifier, All features, Categorical One-Hot
+def train():
+    # Subset
+    new_or_used_dataset = new_or_used_dataset()
+    X = new_or_used_dataset[["listing_type_id", "base_price", "price", "initial_quantity", "sold_quantity", "available_quantity"]]
+    target_name = "condition"
+    y = new_or_used_dataset[target_name]
 
-# Dataset
-dataset = new_or_used_featured_dataset(new_or_used_dataset)
+    # Selectors
+    numerical_columns_selector = selector(dtype_exclude=object)
+    categorical_columns_selector = selector(dtype_include=object)
 
-# Features
-categorical_columns_subset = [
-    "listing_type_id",
-    "buying_mode",
-    "accepts_mercadopago",
-    "automatic_relist",
-    "status",
-    "sub_status_2",
-    "currency_id",
-    "has_warranty",
-    "has_parent_item",
-    "has_official_store",
-    "has_video", 
-    "has_variations"    
-]
+    numerical_columns = numerical_columns_selector(X)
+    categorical_columns = categorical_columns_selector(X)
 
-numerical_columns_subset = [
-    "base_price",
-    "price",
-    "initial_quantity",
-    "sold_quantity",
-    "available_quantity"
-]
+    # Preprocessors
+    categorical_preprocessor = OneHotEncoder(handle_unknown="ignore")
+    numerical_preprocessor = StandardScaler()
 
-X = dataset[categorical_columns_subset + numerical_columns_subset]
-X[categorical_columns_subset] = X[categorical_columns_subset].astype("category")
-y = dataset[["condition"]].values.ravel()
+    preprocessor = ColumnTransformer(
+        [
+            ("one-hot-encoder", categorical_preprocessor, categorical_columns),
+            ("standard_scaler", numerical_preprocessor, numerical_columns),
+        ]
+    )
 
-categorical_columns = X.select_dtypes(include="category").columns
-n_categorical_features = len(categorical_columns)
-n_numerical_features = X.select_dtypes(include="number").shape[1]
+    # Pipeline
+    model = make_pipeline(preprocessor, GradientBoostingClassifier())
 
-print(f"Number of samples: {X.shape[0]}")
-print(f"Number of features: {X.shape[1]}")
-print(f"Number of categorical features: {n_categorical_features}")
-print(f"Number of numerical features: {n_numerical_features}")
+    # Train-test split
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+    print(X_train.shape)
+    print(X_test.shape)
+    print(y_train.shape)
+    print(y_test.shape)
 
-# Train-Test Split
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
-print(X_train.shape)
-print(X_test.shape)
-print(y_train.shape)
-print(y_test.shape)
+    # Train
+    model.fit(X_train, y_train)
+    predictions = model.predict(X_test)
 
-# Pipeline
-one_hot_encoder = make_column_transformer(
-    (
-        OneHotEncoder(sparse=False, handle_unknown="ignore"),
-        make_column_selector(dtype_include="category"),
-    ),
-    remainder="passthrough",
-)
+    # Metrics
+    print("Confusion Matrix:")
+    print(confusion_matrix(y_test, predictions))
 
-one_hot = make_pipeline(
-    one_hot_encoder, GradientBoostingClassifier()
-)
+    print("Classification Report")
+    print(classification_report(y_test, predictions))
 
-pipeline = one_hot
-pipeline.fit(X_train, y_train)
-predictions = pipeline.predict(X_test)
+    # Cross Validation
+    cv_results = cross_validate(model, X, y, cv=5)
 
-# Metrics
-print("Confusion Matrix:")
-print(confusion_matrix(y_test, predictions))
+    scores = cv_results["test_score"]
+    print(
+        "The mean cross-validation accuracy is: "
+        f"{scores.mean():.3f} ± {scores.std():.3f}"
+    )
 
-print("Classification Report")
-print(classification_report(y_test, predictions))
-
-dump(pipeline, '.models/new_or_used_v9.joblib')
+    # Save
+    dump(model, 'models/new_or_used_v9.joblib')
